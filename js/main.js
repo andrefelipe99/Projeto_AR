@@ -1,26 +1,44 @@
-import * as THREE from "three";
+import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
+import { ARButton } from "three/addons/webxr/ARButton.js";
+import { createScene } from "./scene";
+import {
+  displayIntroductionMessage,
+  displayUnsupportedBrowserMessage,
+  browserHasImmersiveArCompatibility,
+} from "./utils/domUtils";
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+import "./style.css";
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+function initializeXRApp() {
+  const { devicePixelRatio, innerHeight, innerWidth } = window;
 
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
+  const renderer = new WebGLRenderer({
+    antialias: true,
+    alpha: true,
+  });
 
-camera.position.z = 5;
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(devicePixelRatio);
 
-function animate() {
-	requestAnimationFrame( animate );
+  renderer.xr.enabled = true;
 
-	cube.rotation.x += 0.01;
-	cube.rotation.y += 0.01;
+  document.body.appendChild(renderer.domElement);
 
-	renderer.render( scene, camera );
+  document.body.appendChild(
+    ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
+  );
+
+  displayIntroductionMessage();
+
+  createScene(renderer);
 }
 
-animate();
+async function start() {
+  const isImmersiveArSupported = await browserHasImmersiveArCompatibility();
+
+  isImmersiveArSupported
+    ? initializeXRApp()
+    : displayUnsupportedBrowserMessage();
+}
+
+start();

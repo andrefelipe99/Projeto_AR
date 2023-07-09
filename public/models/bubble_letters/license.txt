@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bubble Letters
+* source:	https://sketchfab.com/3d-models/bubble-letters-ef49e3ea68f04223b173d86991c77d1c
+* author:	rhcreations (https://sketchfab.com/rhcreations)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bubble Letters" (https://sketchfab.com/3d-models/bubble-letters-ef49e3ea68f04223b173d86991c77d1c) by rhcreations (https://sketchfab.com/rhcreations) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
