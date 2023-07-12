@@ -1,73 +1,8 @@
-import { createPlaneMarker } from "./object";
+import { createPlaneMarker } from "./object/planeMarker";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { handleXRHitTest } from "./utils/hitTest";
 import * as THREE from "three";
-import {
-  AmbientLight,
-  Object3D,
-  PerspectiveCamera,
-  Scene,
-  WebGLRenderer,
-  //XRFrame,
-  MeshBasicMaterial,
-  Mesh,
-} from "three";
-
-// let camera, scene;
-// let controller;
-
-// export function createScene(renderer) {
-
-//   scene = new Scene();
-
-//   camera = new PerspectiveCamera(
-//     70,
-//     window.innerWidth / window.innerHeight,
-//     0.01,
-//     20
-//   );
-
-//   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3);
-//   light.position.set(0.5, 1, 0.25);
-//   scene.add(light);
-
-//   const geometry = new THREE.CylinderGeometry(0, 0.05, 0.2, 32).rotateX(
-//     Math.PI / 2
-//   );
-
-//   function onSelect() {
-//     const material = new THREE.MeshPhongMaterial({
-//       color: 0xffffff * Math.random(),
-//     });
-//     const mesh = new THREE.Mesh(geometry, material);
-//     mesh.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
-//     mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
-//     scene.add(mesh);
-//   }
-
-//   controller = renderer.xr.getController(0);
-//   controller.addEventListener("select", onSelect);
-//   scene.add(controller);
-
-//   window.addEventListener("resize", onWindowResize);
-
-//   animate();
-
-//   function onWindowResize() {
-//     camera.aspect = window.innerWidth / window.innerHeight;
-//     camera.updateProjectionMatrix();
-//     renderer.setSize(window.innerWidth, window.innerHeight);
-//   }
-
-//   function animate() {
-//     renderer.setAnimationLoop(render);
-//   }
-
-//   function render() {
-//     renderer.render(scene, camera);
-//   }
-// }
-// Custom 3D model augmentation
+import { AmbientLight, PerspectiveCamera, Scene } from "three";
 
 export function createScene(renderer) {
   const scene = new Scene();
@@ -90,25 +25,25 @@ export function createScene(renderer) {
    */
   const loader = new GLTFLoader();
 
-  let carModel;
+  let letters;
 
   loader.load("/models/bubble_letters/scene.gltf", function (gltf) {
     console.log(gltf);
-    carModel = gltf.scene.getObjectById(11);
+    letters = gltf.scene.getObjectById(11);
 
     let count = 0;
-    for (var i = 13; i < carModel.children.length; i++) {
-      carModel.children[i].position.set(count, 0, 1);
+    for (var i = 13; i < letters.children.length; i++) {
+      letters.children[i].position.set(count, 0, 1);
       count++;
     }
 
-    const letters = carModel.children[25];
+    // const test = letters.children[25];
 
-    letters.rotateX(THREE.MathUtils.degToRad(90));
+    // test.rotateX(THREE.MathUtils.degToRad(90));
 
-    letters.scale.set(1, 1, 1);
-    letters.position.set(0, 0, -10);
-    scene.add(letters);
+    // test.scale.set(1, 1, 1);
+    // test.position.set(0, 0, -10);
+    // scene.add(test);
   });
 
   /**
@@ -129,15 +64,33 @@ export function createScene(renderer) {
    * The onSelect function is called whenever we tap the screen
    * in XR mode.
    */
+  let model;
+
   function onSelect() {
     if (planeMarker.visible) {
-      const model = carModel.clone();
+      if (model) {
+        scene.remove(model);
+      }
+      model = letters.clone();
 
+      model.rotateX(THREE.MathUtils.degToRad(-90));
+
+      // Obter as dimensões do objeto
+      const bbox = new THREE.Box3().setFromObject(model);
+      const objectSize = new THREE.Vector3();
+      bbox.getSize(objectSize);
+
+      // Calcular a translação para posicionar o objeto no meio em relação ao ponto do hit test
+      const translation = new THREE.Vector3();
+      translation.x = -objectSize.x / 2;
+      translation.y = -objectSize.y / 2;
+      translation.z = -objectSize.z / 2;
+
+      // Aplicar a translação
       // Place the model on the spot where the marker is showing.
       model.position.setFromMatrixPosition(planeMarker.matrix);
+      model.position.add(translation);      
 
-      // Rotate the model randomly to give a bit of variation.
-      //model.rotation.y = Math.random() * (Math.PI * 2);
       model.visible = true;
 
       scene.add(model);
