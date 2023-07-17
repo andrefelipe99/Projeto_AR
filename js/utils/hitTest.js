@@ -1,5 +1,3 @@
-//import { WebGLRenderer, XRFrame, XRHitTestSource } from "three";
-
 let hitTestSource;
 let hitTestSourceRequested = false;
 

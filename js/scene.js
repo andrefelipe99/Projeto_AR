@@ -17,9 +17,9 @@ export function createScene(renderer) {
   /**
    * Add some simple ambient lights to illuminate the model.
    */
-  const ambientLight = new AmbientLight(0xffffff, 1.0);
-  scene.add(ambientLight);
-
+  const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+  scene.add(light);
+  
   /**
    * Load the gLTF model and assign result to variable.
    */
@@ -29,21 +29,14 @@ export function createScene(renderer) {
 
   loader.load("/models/bubble_letters/scene.gltf", function (gltf) {
     console.log(gltf);
+
     letters = gltf.scene.getObjectById(11);
 
     let count = 0;
-    for (var i = 13; i < letters.children.length; i++) {
+    for (var i = 14; i < letters.children.length; i++) {
       letters.children[i].position.set(count, 0, 1);
       count++;
     }
-
-    // const test = letters.children[25];
-
-    // test.rotateX(THREE.MathUtils.degToRad(90));
-
-    // test.scale.set(1, 1, 1);
-    // test.position.set(0, 0, -10);
-    // scene.add(test);
   });
 
   /**
@@ -75,21 +68,17 @@ export function createScene(renderer) {
 
       model.rotateX(THREE.MathUtils.degToRad(-90));
 
-      // Obter as dimensões do objeto
       const bbox = new THREE.Box3().setFromObject(model);
       const objectSize = new THREE.Vector3();
       bbox.getSize(objectSize);
 
-      // Calcular a translação para posicionar o objeto no meio em relação ao ponto do hit test
       const translation = new THREE.Vector3();
       translation.x = -objectSize.x / 2;
       translation.y = -objectSize.y / 2;
       translation.z = -objectSize.z / 2;
 
-      // Aplicar a translação
-      // Place the model on the spot where the marker is showing.
       model.position.setFromMatrixPosition(planeMarker.matrix);
-      model.position.add(translation);      
+      model.position.add(translation);
 
       model.visible = true;
 
