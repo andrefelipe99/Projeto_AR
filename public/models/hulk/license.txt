@@ -1,0 +1,11 @@
+Model Information:
+* title:	Hulk fan art
+* source:	https://sketchfab.com/3d-models/hulk-fan-art-5ee30a3a72544c989a17184216971aa0
+* author:	The Who (https://sketchfab.com/reallichao)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Hulk fan art" (https://sketchfab.com/3d-models/hulk-fan-art-5ee30a3a72544c989a17184216971aa0) by The Who (https://sketchfab.com/reallichao) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

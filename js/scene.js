@@ -3,9 +3,10 @@ import { XRControllerModelFactory } from "three/addons/webxr/XRControllerModelFa
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as THREE from "three";
 import { PerspectiveCamera, Scene } from "three";
+import { showObjectForWord } from "./utils/words";
+
 
 export function createScene(renderer) {
-  let container;
   let controller1, controller2;
   let controllerGrip1, controllerGrip2;
 
@@ -195,27 +196,6 @@ export function createScene(renderer) {
     }
   }
 
-  // Define a dictionary of valid words
-  const validWords = ["LUA", "SOL", "GATO", "BOLA", "HULK"];
-
-  // // Track currently placed letters
-  let placedLetters = "";
-
-  function checkForWordMatch() {
-    for (const word of validWords) {
-      if (placedLetters.includes(word)) {
-        // Trigger action for matching word (e.g., show related object)
-        showObjectForWord(word);
-        break; // Exit loop after the first match
-      }
-    }
-  }
-
-  function showObjectForWord(word) {
-    // Logic to show the object associated with the word
-    console.log("Matching word:", word);
-  }
-
   function getIntersections(controller) {
     controller.updateMatrixWorld();
 
@@ -291,9 +271,35 @@ export function createScene(renderer) {
 
       // Align the letter's rotation with the plane's rotation
       letter.rotation.set(0, 0, 0);
-      //console.log(nameToLetterMap[letter.name]);
+
+      const letterChar = nameToLetterMap[letter.name];
+      placedLetters += letterChar; // Add the letter to the placed letters
+      checkForWordMatch(); // Check for word matches whenever a new letter is placed
     }
   }
+
+  // Define a dictionary of valid words
+  const validWords = ["LUA", "SNL", "HATN", "BNLA", "EULK"];
+
+  // Track currently placed letters
+  let placedLetters = "";
+  let recognizedWords = [];
+
+  function checkForWordMatch() {
+    for (const word of validWords) {
+      if (placedLetters.includes(word) && !recognizedWords.includes(word)) {
+        recognizedWords.push(word);
+
+        renderer.xr.getSession().addEventListener("end", () => {
+          showObjectButton.style.display = "block"; // Mostra o botão
+        });
+        
+        showObjectButton.addEventListener("click", showObjectForWord(scene, group, group2, word));
+      }
+    }
+  }
+
+  const showObjectButton = document.getElementById("showObjectButton");
 
   function render() {
     cleanIntersected();
