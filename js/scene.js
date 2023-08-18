@@ -1,10 +1,21 @@
-import { createPlaneMarker } from "./object/planeMarker";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { handleXRHitTest } from "./utils/hitTest";
+import { XRControllerModelFactory } from "three/addons/webxr/XRControllerModelFactory.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as THREE from "three";
-import { AmbientLight, PerspectiveCamera, Scene } from "three";
+import { PerspectiveCamera, Scene } from "three";
 
 export function createScene(renderer) {
+  let container;
+  let controller1, controller2;
+  let controllerGrip1, controllerGrip2;
+
+  let raycaster;
+
+  const intersected = [];
+  const tempMatrix = new THREE.Matrix4();
+
+  let controls, group, group2;
+
   const scene = new Scene();
 
   const camera = new PerspectiveCamera(
@@ -14,115 +25,287 @@ export function createScene(renderer) {
     20
   );
 
-  /**
-   * Add some simple ambient lights to illuminate the model.
-   */
-  const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 1.6, 0);
+  controls.update();
+
+  scene.add(new THREE.HemisphereLight(0xbcbcbc, 0xa5a5a5, 3));
+
+  const light = new THREE.DirectionalLight(0xffffff, 3);
+  light.position.set(0, 6, 0);
+  light.castShadow = true;
+  light.shadow.camera.top = 3;
+  light.shadow.camera.bottom = -3;
+  light.shadow.camera.right = 3;
+  light.shadow.camera.left = -3;
+  light.shadow.mapSize.set(4096, 4096);
   scene.add(light);
-  
+
   /**
    * Load the gLTF model and assign result to variable.
    */
+  group = new THREE.Group();
+  scene.add(group);
+
+  const nameToLetterMap = {};
+
   const loader = new GLTFLoader();
+  loader.load(
+    "models/bubble_letters/scene.gltf",
+    function (gltf) {
+      const model = gltf.scene;
 
-  let letters;
+      const letters = model.getObjectByName("GLTF_SceneRootNode");
 
-  loader.load("/models/bubble_letters/scene.gltf", function (gltf) {
-    console.log(gltf);
+      const spacingX = 0.5; // Espaçamento horizontal entre elementos
+      const spacingY = 0.6; // Espaçamento vertical entre elementos
+      const maxPerRow = 12; // Número máximo de elementos por linha
 
-    letters = gltf.scene.getObjectById(11);
+      let countX = 0;
+      let countY = 0;
 
-    let count = 0;
-    for (var i = 14; i < letters.children.length; i++) {
-      letters.children[i].position.set(count, 0, 1);
-      count++;
+      let i = 0;
+      let count = 0;
+      letters.traverse((child) => {
+        if (child.isMesh) {
+          // Atribuir o material à mesh da letra
+          child.material = child.material.clone();
+          const letter = String.fromCharCode(65 + count); // A, B, C, ...
+          nameToLetterMap[child.name] = letter;
+          child.scale.set(0.4, 0.4, 0.4);
+
+          // Definir a posição com base no padrão descrito
+          const positionX = countX * spacingX;
+          const positionY = 0;
+          const positionZ = countY * spacingY;
+          child.position.set(positionX - 3, positionY, positionZ - 2);
+
+          // Adicionar a mesh da letra ao grupo
+          group.add(child);
+          count++;
+
+          // Atualizar os contadores de posição
+          if (i < maxPerRow) {
+            countX++;
+            i++;
+          } else {
+            countY = 1;
+            countX = 0;
+            i = 0;
+          }
+        }
+      });
+    },
+    undefined,
+    function (e) {
+      console.error(e);
     }
+  );
+
+  controller1 = renderer.xr.getController(0);
+  controller1.addEventListener("selectstart", onSelectStart);
+  controller1.addEventListener("selectend", onSelectEnd);
+  scene.add(controller1);
+
+  controller2 = renderer.xr.getController(1);
+  controller2.addEventListener("selectstart", onSelectStart);
+  controller2.addEventListener("selectend", onSelectEnd);
+  scene.add(controller2);
+
+  const controllerModelFactory = new XRControllerModelFactory();
+
+  controllerGrip1 = renderer.xr.getControllerGrip(0);
+  controllerGrip1.add(
+    controllerModelFactory.createControllerModel(controllerGrip1)
+  );
+  scene.add(controllerGrip1);
+
+  controllerGrip2 = renderer.xr.getControllerGrip(1);
+  controllerGrip2.add(
+    controllerModelFactory.createControllerModel(controllerGrip2)
+  );
+  scene.add(controllerGrip2);
+
+  const geometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, -1),
+  ]);
+
+  const line = new THREE.Line(geometry);
+  line.name = "line";
+  line.scale.z = 5;
+
+  controller1.add(line.clone());
+  controller2.add(line.clone());
+
+  group2 = new THREE.Group();
+  scene.add(group2);
+
+  const planeGeometry = new THREE.PlaneGeometry(1, 1);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffff00,
+    side: THREE.DoubleSide,
   });
 
-  /**
-   * Create the plane marker to show on tracked surfaces.
-   */
-  const planeMarker = createPlaneMarker();
-  scene.add(planeMarker);
+  for (let i = 0; i < 4; i++) {
+    const plane = new THREE.Mesh(planeGeometry, material);
+    plane.position.set(-1 + (i - 0.5), 0, -0.5); // Espaçamento horizontal entre os planos
+    plane.scale.set(0.5, 0.5, 1);
+    plane.rotateX(-Math.PI / 2);
+    group2.add(plane);
+  }
 
-  /**
-   * Setup the controller to get input from the XR space.
-   */
-  const controller = renderer.xr.getController(0);
-  scene.add(controller);
+  raycaster = new THREE.Raycaster();
 
-  controller.addEventListener("select", onSelect);
+  window.addEventListener("resize", onWindowResize);
 
-  /**
-   * The onSelect function is called whenever we tap the screen
-   * in XR mode.
-   */
-  let model;
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 
-  function onSelect() {
-    if (planeMarker.visible) {
-      if (model) {
-        scene.remove(model);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function onSelectStart(event) {
+    const controller = event.target;
+
+    const intersections = getIntersections(controller);
+
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+
+      const object = intersection.object;
+      object.material.emissive.b = 1;
+      controller.attach(object);
+      controller.userData.selected = object;
+    }
+
+    controller.userData.targetRayMode = event.data.targetRayMode;
+  }
+
+  function onSelectEnd(event) {
+    const controller = event.target;
+
+    if (controller.userData.selected !== undefined) {
+      const object = controller.userData.selected;
+      object.material.emissive.b = 0;
+      group.attach(object);
+
+      controller.userData.selected = undefined;
+    }
+  }
+
+  // Define a dictionary of valid words
+  const validWords = ["LUA", "SOL", "GATO", "BOLA", "HULK"];
+
+  // // Track currently placed letters
+  let placedLetters = "";
+
+  function checkForWordMatch() {
+    for (const word of validWords) {
+      if (placedLetters.includes(word)) {
+        // Trigger action for matching word (e.g., show related object)
+        showObjectForWord(word);
+        break; // Exit loop after the first match
       }
-      model = letters.clone();
-
-      model.rotateX(THREE.MathUtils.degToRad(-90));
-
-      const bbox = new THREE.Box3().setFromObject(model);
-      const objectSize = new THREE.Vector3();
-      bbox.getSize(objectSize);
-
-      const translation = new THREE.Vector3();
-      translation.x = -objectSize.x / 2;
-      translation.y = -objectSize.y / 2;
-      translation.z = -objectSize.z / 2;
-
-      model.position.setFromMatrixPosition(planeMarker.matrix);
-      model.position.add(translation);
-
-      model.visible = true;
-
-      scene.add(model);
     }
   }
 
-  /**
-   * Called whenever a new hit test result is ready.
-   */
-  function onHitTestResultReady(hitPoseTransformed) {
-    if (hitPoseTransformed) {
-      planeMarker.visible = true;
-      planeMarker.matrix.fromArray(hitPoseTransformed);
+  function showObjectForWord(word) {
+    // Logic to show the object associated with the word
+    console.log("Matching word:", word);
+  }
+
+  function getIntersections(controller) {
+    controller.updateMatrixWorld();
+
+    tempMatrix.identity().extractRotation(controller.matrixWorld);
+
+    raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+    raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+
+    return raycaster.intersectObjects(group.children, false);
+  }
+
+  function intersectObjects(controller) {
+    // Do not highlight in mobile-ar
+
+    if (controller.userData.targetRayMode === "screen") return;
+
+    // Do not highlight when already selected
+
+    if (controller.userData.selected !== undefined) return;
+
+    const line = controller.getObjectByName("line");
+    const intersections = getIntersections(controller);
+
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+
+      const object = intersection.object;
+      object.material.emissive.r = 1;
+      intersected.push(object);
+
+      line.scale.z = intersection.distance;
+    } else {
+      line.scale.z = 5;
     }
   }
 
-  /**
-   * Called whenever the hit test is empty/unsuccesful.
-   */
-  function onHitTestResultEmpty() {
-    planeMarker.visible = false;
+  function cleanIntersected() {
+    while (intersected.length) {
+      const object = intersected.pop();
+      object.material.emissive.r = 0;
+    }
   }
 
-  /**
-   * The main render loop.
-   *
-   * This is where we perform hit-tests and update the scene
-   * whenever anything changes.
-   */
-  const renderLoop = (timestamp, frame) => {
-    if (renderer.xr.isPresenting) {
-      if (frame) {
-        handleXRHitTest(
-          renderer,
-          frame,
-          onHitTestResultReady,
-          onHitTestResultEmpty
-        );
+  function checkLetterPlaneCollisions() {
+    const letterCollisions = [];
+
+    group.traverse((child) => {
+      if (child.isMesh) {
+        const letterBoundingBox = new THREE.Box3().setFromObject(child);
+        for (const plane of group2.children) {
+          const planeBoundingBox = new THREE.Box3().setFromObject(plane);
+
+          if (letterBoundingBox.intersectsBox(planeBoundingBox)) {
+            letterCollisions.push({ letter: child, plane: plane });
+          }
+        }
       }
+    });
 
-      renderer.render(scene, camera);
+    return letterCollisions;
+  }
+
+  function handleLetterPlaneCollisions(collidedLetterPlanes) {
+    for (const { letter, plane } of collidedLetterPlanes) {
+      letter.material.color.set(0xff0000); // Change color to red
+
+      // Set the position of the letter to match the position of the plane
+      letter.position.set(
+        plane.position.x,
+        plane.position.y,
+        plane.position.z + 0.2
+      );
+
+      // Align the letter's rotation with the plane's rotation
+      letter.rotation.set(0, 0, 0);
+      //console.log(nameToLetterMap[letter.name]);
     }
-  };
+  }
 
-  renderer.setAnimationLoop(renderLoop);
+  function render() {
+    cleanIntersected();
+
+    intersectObjects(controller1);
+    intersectObjects(controller2);
+
+    const collidedLetterPlanes = checkLetterPlaneCollisions();
+    handleLetterPlaneCollisions(collidedLetterPlanes);
+
+    renderer.render(scene, camera);
+  }
+
+  renderer.setAnimationLoop(render);
 }
