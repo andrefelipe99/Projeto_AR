@@ -1,5 +1,4 @@
 import { WebGLRenderer } from "three/src/renderers/WebGLRenderer";
-import { ARButton } from "three/addons/webxr/ARButton.js";
 import { XRButton } from "three/addons/webxr/XRButton.js";
 import { createScene } from "./scene";
 import {
@@ -26,10 +25,6 @@ function initializeXRApp() {
   document.body.appendChild(renderer.domElement);
 
   document.body.appendChild(XRButton.createButton(renderer));
-  // document.body.appendChild(
-  //   ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
-  // );
-
   displayIntroductionMessage();
 
   createScene(renderer);

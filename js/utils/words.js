@@ -8,10 +8,12 @@ export const wordToModelPath = {
   EULK: "models/hulk/scene.gltf",
 };
 
-export function showObjectForWord(scene, group, group2, word) {
+export function showObjectForWord(scene, word) {
   if (wordToModelPath[word]) {
-    group.visible = false;
-    group2.visible = false;
+    for (let i = scene.children.length - 1; i >= 2; i--) {
+      const child = scene.children[i];
+      scene.remove(child);
+    }
 
     const modelPath = wordToModelPath[word];
 
@@ -22,8 +24,8 @@ export function showObjectForWord(scene, group, group2, word) {
         const model = gltf.scene;
 
         // Configure a posição, escala, etc., do modelo conforme necessário
-        model.position.set(0, 1, 0);
-        model.scale.set(0.2, 0.2, 0.2);
+        model.position.set(0, 0, -1);
+        model.scale.set(0.5, 0.5, 0.5);
 
         // Adicione o modelo à cena
         scene.add(model);

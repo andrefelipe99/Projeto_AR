@@ -5,7 +5,6 @@ import * as THREE from "three";
 import { PerspectiveCamera, Scene } from "three";
 import { showObjectForWord } from "./utils/words";
 
-
 export function createScene(renderer) {
   let controller1, controller2;
   let controllerGrip1, controllerGrip2;
@@ -278,7 +277,7 @@ export function createScene(renderer) {
     }
   }
 
-  // Define a dictionary of valid words
+  //Define a dictionary of valid words
   const validWords = ["LUA", "SNL", "HATN", "BNLA", "EULK"];
 
   // Track currently placed letters
@@ -290,16 +289,10 @@ export function createScene(renderer) {
       if (placedLetters.includes(word) && !recognizedWords.includes(word)) {
         recognizedWords.push(word);
 
-        renderer.xr.getSession().addEventListener("end", () => {
-          showObjectButton.style.display = "block"; // Mostra o botão
-        });
-        
-        showObjectButton.addEventListener("click", showObjectForWord(scene, group, group2, word));
+        showObjectForWord(scene, word);
       }
     }
   }
-
-  const showObjectButton = document.getElementById("showObjectButton");
 
   function render() {
     cleanIntersected();
